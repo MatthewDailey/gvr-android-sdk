@@ -30,17 +30,44 @@ public class GvrFloor {
 
     private float[] modelFloor;
 
-    private GvrFloor() {}
+    public GvrFloor() {}
 
-    public static GvrFloor create(Context context) {
-        GvrFloor floor = new GvrFloor();
-        floor.createFloor(context);
-        return floor;
+    /**
+     * Draw the floor.
+     * <p/>
+     * <p>This feeds in data for the floor into the shader. Note that this doesn't feed in data about
+     * position of the light, so if we rewrite our code to draw the floor first, the lighting might
+     * look strange.
+     */
+    public void draw(float[] lightPosInEyeSpace,
+                     float[] view,
+                     float[] modelView,
+                     float[] modelViewProjection,
+                     float[] perspective) {
+
+        Matrix.multiplyMM(modelView, 0, view, 0, modelFloor, 0);
+        Matrix.multiplyMM(modelViewProjection, 0, perspective, 0, modelView, 0);
+
+        GLES20.glUseProgram(floorProgram);
+
+        // Set ModelView, MVP, position, normals, and color.
+        GLES20.glUniform3fv(floorLightPosParam, 1, lightPosInEyeSpace, 0);
+        GLES20.glUniformMatrix4fv(floorModelParam, 1, false, modelFloor, 0);
+        GLES20.glUniformMatrix4fv(floorModelViewParam, 1, false, modelView, 0);
+        GLES20.glUniformMatrix4fv(floorModelViewProjectionParam, 1, false, modelViewProjection, 0);
+        GLES20.glVertexAttribPointer(
+                floorPositionParam, TreasureHuntActivity.COORDS_PER_VERTEX, GLES20.GL_FLOAT, false, 0, floorVertices);
+        GLES20.glVertexAttribPointer(floorNormalParam, 3, GLES20.GL_FLOAT, false, 0, floorNormals);
+        GLES20.glVertexAttribPointer(floorColorParam, 4, GLES20.GL_FLOAT, false, 0, floorColors);
+
+        GLES20.glEnableVertexAttribArray(floorPositionParam);
+        GLES20.glEnableVertexAttribArray(floorNormalParam);
+        GLES20.glEnableVertexAttribArray(floorColorParam);
+
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 24);
     }
 
-    private void createFloor(Context context) {
-
-        // make a floor
+    public void onSurfaceCreated(Context context) {
         ByteBuffer bbFloorVertices = ByteBuffer.allocateDirect(WorldLayoutData.FLOOR_COORDS.length * 4);
         bbFloorVertices.order(ByteOrder.nativeOrder());
         floorVertices = bbFloorVertices.asFloatBuffer();
@@ -83,40 +110,4 @@ public class GvrFloor {
         Matrix.setIdentityM(modelFloor, 0);
         Matrix.translateM(modelFloor, 0, 0, -floorDepth, 0); // Floor appears below user.
     }
-
-    /**
-     * Draw the floor.
-     * <p/>
-     * <p>This feeds in data for the floor into the shader. Note that this doesn't feed in data about
-     * position of the light, so if we rewrite our code to draw the floor first, the lighting might
-     * look strange.
-     */
-    public void drawFloor(float[] lightPosInEyeSpace,
-                          float[] view,
-                          float[] modelView,
-                          float[] modelViewProjection,
-                          float[] perspective) {
-
-        Matrix.multiplyMM(modelView, 0, view, 0, modelFloor, 0);
-        Matrix.multiplyMM(modelViewProjection, 0, perspective, 0, modelView, 0);
-
-        GLES20.glUseProgram(floorProgram);
-
-        // Set ModelView, MVP, position, normals, and color.
-        GLES20.glUniform3fv(floorLightPosParam, 1, lightPosInEyeSpace, 0);
-        GLES20.glUniformMatrix4fv(floorModelParam, 1, false, modelFloor, 0);
-        GLES20.glUniformMatrix4fv(floorModelViewParam, 1, false, modelView, 0);
-        GLES20.glUniformMatrix4fv(floorModelViewProjectionParam, 1, false, modelViewProjection, 0);
-        GLES20.glVertexAttribPointer(
-                floorPositionParam, TreasureHuntActivity.COORDS_PER_VERTEX, GLES20.GL_FLOAT, false, 0, floorVertices);
-        GLES20.glVertexAttribPointer(floorNormalParam, 3, GLES20.GL_FLOAT, false, 0, floorNormals);
-        GLES20.glVertexAttribPointer(floorColorParam, 4, GLES20.GL_FLOAT, false, 0, floorColors);
-
-        GLES20.glEnableVertexAttribArray(floorPositionParam);
-        GLES20.glEnableVertexAttribArray(floorNormalParam);
-        GLES20.glEnableVertexAttribArray(floorColorParam);
-
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 24);
-    }
-
 }
