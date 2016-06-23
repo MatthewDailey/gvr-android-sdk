@@ -96,6 +96,9 @@ public class GvrFloor {
         int gridShader = glShaderLoader.loadGLShader(GLES20.GL_FRAGMENT_SHADER, R.raw.grid_fragment);
         int vertexShader = glShaderLoader.loadGLShader(GLES20.GL_VERTEX_SHADER, R.raw.light_vertex);
 
+
+
+
         floorProgram = GLES20.glCreateProgram();
         GLES20.glAttachShader(floorProgram, vertexShader);
         GLES20.glAttachShader(floorProgram, gridShader);
@@ -115,5 +118,7 @@ public class GvrFloor {
 
         Matrix.setIdentityM(modelFloor, 0);
         Matrix.translateM(modelFloor, 0, 0, -floorDepth, 0); // Floor appears below user.
+
+        GLErrorUtils.checkGLError("Floor program params");
     }
 }

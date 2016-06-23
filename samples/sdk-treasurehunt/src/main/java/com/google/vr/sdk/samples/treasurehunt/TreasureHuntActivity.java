@@ -109,19 +109,6 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     private volatile int soundId = GvrAudioEngine.INVALID_ID;
 
     /**
-     * Checks if we've had an error inside of OpenGL ES, and if so what that error is.
-     *
-     * @param label Label to report in case of error.
-     */
-    private static void checkGLError(String label) {
-        int error;
-        while ((error = GLES20.glGetError()) != GLES20.GL_NO_ERROR) {
-            Log.e(TAG, label + ": glError " + error);
-            throw new RuntimeException(label + ": glError " + error);
-        }
-    }
-
-    /**
      * Sets the view to our GvrView and initializes the transformation matrices we will use
      * to render our scene.
      */
@@ -135,6 +122,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         camera = new float[16];
         view = new float[16];
         modelView = new float[16];
+        modelViewProjection = new float[16];
 
         tempPosition = new float[4];
         // Model first appears directly in front of user.
@@ -237,7 +225,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         GLES20.glLinkProgram(cubeProgram);
         GLES20.glUseProgram(cubeProgram);
 
-        checkGLError("Cube program");
+        GLErrorUtils.checkGLError("Cube program");
 
         cubePositionParam = GLES20.glGetAttribLocation(cubeProgram, "a_Position");
         cubeNormalParam = GLES20.glGetAttribLocation(cubeProgram, "a_Normal");
@@ -248,11 +236,9 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         cubeModelViewProjectionParam = GLES20.glGetUniformLocation(cubeProgram, "u_MVP");
         cubeLightPosParam = GLES20.glGetUniformLocation(cubeProgram, "u_LightPos");
 
-        checkGLError("Cube program params");
+        GLErrorUtils.checkGLError("Cube program params");
 
         floor.onSurfaceCreated();
-
-        checkGLError("Floor program params");
 
         // Avoid any delays during start-up due to decoding of sound files.
         new Thread(
@@ -273,7 +259,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
 
         updateModelPosition();
 
-        checkGLError("onSurfaceCreated");
+        GLErrorUtils.checkGLError("onSurfaceCreated");
     }
 
     /**
@@ -288,7 +274,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
             gvrAudioEngine.setSoundObjectPosition(
                     soundId, modelPosition[0], modelPosition[1], modelPosition[2]);
         }
-        checkGLError("updateCubePosition");
+        GLErrorUtils.checkGLError("updateCubePosition");
     }
 
     /**
@@ -312,7 +298,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         // Regular update call to GVR audio engine.
         gvrAudioEngine.update();
 
-        checkGLError("onReadyToDraw");
+        GLErrorUtils.checkGLError("onReadyToDraw");
     }
 
     protected void setCubeRotation() {
@@ -329,7 +315,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         GLES20.glEnable(GLES20.GL_DEPTH_TEST);
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
 
-        checkGLError("colorParam");
+        GLErrorUtils.checkGLError("colorParam");
 
         // Apply the eye transformation to the camera.
         Matrix.multiplyMM(view, 0, eye.getEyeView(), 0, camera, 0);
@@ -386,7 +372,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         GLES20.glEnableVertexAttribArray(cubeColorParam);
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 36);
-        checkGLError("Drawing cube");
+        GLErrorUtils.checkGLError("Drawing cube");
     }
 
 
