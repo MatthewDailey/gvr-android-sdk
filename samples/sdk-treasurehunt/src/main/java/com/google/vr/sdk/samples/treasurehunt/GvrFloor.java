@@ -30,7 +30,16 @@ public class GvrFloor {
 
     private float[] modelFloor;
 
-    public GvrFloor() {}
+    // Class variables used only to store matrices in draw.
+    // Reused to avoid repeated allocation overhead.
+    float[] modelView = new float[16];
+    float[] modelViewProjection = new float[16];
+
+    private final Context context;
+
+    public GvrFloor(Context context) {
+        this.context = context;
+    }
 
     /**
      * Draw the floor.
@@ -41,10 +50,7 @@ public class GvrFloor {
      */
     public void draw(float[] lightPosInEyeSpace,
                      float[] view,
-                     float[] modelView,
-                     float[] modelViewProjection,
                      float[] perspective) {
-
         Matrix.multiplyMM(modelView, 0, view, 0, modelFloor, 0);
         Matrix.multiplyMM(modelViewProjection, 0, perspective, 0, modelView, 0);
 
@@ -67,7 +73,7 @@ public class GvrFloor {
         GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 24);
     }
 
-    public void onSurfaceCreated(Context context) {
+    public void onSurfaceCreated() {
         ByteBuffer bbFloorVertices = ByteBuffer.allocateDirect(WorldLayoutData.FLOOR_COORDS.length * 4);
         bbFloorVertices.order(ByteOrder.nativeOrder());
         floorVertices = bbFloorVertices.asFloatBuffer();

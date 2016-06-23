@@ -134,7 +134,6 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         modelCube = new float[16];
         camera = new float[16];
         view = new float[16];
-        modelViewProjection = new float[16];
         modelView = new float[16];
 
         tempPosition = new float[4];
@@ -144,7 +143,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         headView = new float[16];
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
-        floor = new GvrFloor();
+        floor = new GvrFloor(this);
 
         // Initialize 3D audio engine.
         gvrAudioEngine = new GvrAudioEngine(this, GvrAudioEngine.RenderingMode.BINAURAL_HIGH_QUALITY);
@@ -251,7 +250,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
 
         checkGLError("Cube program params");
 
-        floor.onSurfaceCreated(this);
+        floor.onSurfaceCreated();
 
         checkGLError("Floor program params");
 
@@ -346,7 +345,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         drawCube();
 
         // Set modelView for the floor, so we draw floor in the correct location
-        floor.draw(lightPosInEyeSpace, view, modelView, modelViewProjection, perspective);
+        floor.draw(lightPosInEyeSpace, view, perspective);
     }
 
     @Override
