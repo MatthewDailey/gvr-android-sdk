@@ -23,7 +23,6 @@ import android.os.Bundle;
 import android.os.Vibrator;
 import android.util.Log;
 
-import com.google.vr.sdk.audio.GvrAudioEngine;
 import com.google.vr.sdk.base.Eye;
 import com.google.vr.sdk.base.GvrActivity;
 import com.google.vr.sdk.base.GvrView;
@@ -55,8 +54,6 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     // We keep the light always position just above the user.
     private static final float[] LIGHT_POS_IN_WORLD_SPACE = new float[]{0.0f, 2.0f, 0.0f, 1.0f};
 
-    private static final String SOUND_FILE = "cube_sound.wav";
-
     private final float[] lightPosInEyeSpace = new float[4];
 
     private TreasureHuntFloor floor;
@@ -69,9 +66,6 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     private float[] headRotation;
 
     private Vibrator vibrator;
-
-    private GvrAudioEngine gvrAudioEngine;
-    private volatile int soundId = GvrAudioEngine.INVALID_ID;
 
     /**
      * Sets the view to our GvrView and initializes the transformation matrices we will use
@@ -93,9 +87,6 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
 
         floor = new TreasureHuntFloor(this);
         cube = new TreasureHuntCube(this);
-
-        // Initialize 3D audio engine.
-        gvrAudioEngine = new GvrAudioEngine(this, GvrAudioEngine.RenderingMode.BINAURAL_HIGH_QUALITY);
     }
 
     public void initializeGvrView() {
@@ -118,14 +109,14 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
 
     @Override
     public void onPause() {
-        gvrAudioEngine.pause();
         super.onPause();
+        cube.pauseAudio();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        gvrAudioEngine.resume();
+        cube.startAudio();
     }
 
     @Override
@@ -154,22 +145,6 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         cube.onSurfaceCreated();
         floor.onSurfaceCreated();
 
-        // Avoid any delays during start-up due to decoding of sound files.
-        new Thread(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        // Start spatial audio playback of SOUND_FILE at the model postion. The returned
-                        //soundId handle is stored and allows for repositioning the sound object whenever
-                        // the cube position changes.
-                        gvrAudioEngine.preloadSoundFile(SOUND_FILE);
-                        soundId = gvrAudioEngine.createSoundObject(SOUND_FILE);
-                        cube.setSoundPosition(soundId, gvrAudioEngine);
-                        gvrAudioEngine.playSound(soundId, true /* looped playback */);
-                    }
-                })
-                .start();
-
         updateModelPosition();
 
         GLErrorUtils.checkGLError("onSurfaceCreated");
@@ -181,10 +156,6 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     protected void updateModelPosition() {
         cube.updateModelPosition();
 
-        // Update the sound location to match it with the new cube position.
-        if (soundId != GvrAudioEngine.INVALID_ID) {
-            cube.setSoundPosition(soundId, gvrAudioEngine);
-        }
         GLErrorUtils.checkGLError("updateCubePosition");
     }
 
@@ -204,10 +175,8 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
 
         // Update the 3d audio engine with the most recent head rotation.
         headTransform.getQuaternion(headRotation, 0);
-        gvrAudioEngine.setHeadRotation(
-                headRotation[0], headRotation[1], headRotation[2], headRotation[3]);
-        // Regular update call to GVR audio engine.
-        gvrAudioEngine.update();
+
+        cube.updateAudioPosition(headRotation);
 
         GLErrorUtils.checkGLError("onReadyToDraw");
     }

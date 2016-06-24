@@ -10,7 +10,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
-public class TreasureHuntCube implements VisibleGvrObject {
+public class TreasureHuntCube implements VisibleGvrObject, AudibleGvrObject {
 
     private static final float MIN_MODEL_DISTANCE = 3.0f;
     private static final float MAX_MODEL_DISTANCE = 7.0f;
@@ -19,6 +19,8 @@ public class TreasureHuntCube implements VisibleGvrObject {
     private static final float PITCH_LIMIT = 0.12f;
 
     private static final float TIME_DELTA = 0.3f;
+
+    private static final String SOUND_FILE = "cube_sound.wav";
 
     private FloatBuffer cubeVertices;
     private FloatBuffer cubeColors;
@@ -52,8 +54,14 @@ public class TreasureHuntCube implements VisibleGvrObject {
 
     private final Context context;
 
+    private GvrAudioEngine gvrAudioEngine;
+    private volatile int soundId = GvrAudioEngine.INVALID_ID;
+
     public TreasureHuntCube(Context context) {
         this.context = context;
+
+        // Initialize 3D audio engine.
+        gvrAudioEngine = new GvrAudioEngine(context, GvrAudioEngine.RenderingMode.BINAURAL_HIGH_QUALITY);
     }
 
     public void draw(float[] lightPosInEyeSpace,
@@ -94,6 +102,24 @@ public class TreasureHuntCube implements VisibleGvrObject {
     }
 
     public void onSurfaceCreated() {
+
+        // Avoid any delays during start-up due to decoding of sound files.
+        new Thread(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        // Start spatial audio playback of SOUND_FILE at the model postion. The returned
+                        //soundId handle is stored and allows for repositioning the sound object whenever
+                        // the cube position changes.
+                        gvrAudioEngine.preloadSoundFile(SOUND_FILE);
+                        soundId = gvrAudioEngine.createSoundObject(SOUND_FILE);
+                        setSoundPosition(soundId, gvrAudioEngine);
+                        gvrAudioEngine.playSound(soundId, true /* looped playback */);
+                    }
+                })
+                .start();
+
+        // Visuable set up.
         ByteBuffer bbVertices = ByteBuffer.allocateDirect(WorldLayoutData.CUBE_COORDS.length * 4);
         bbVertices.order(ByteOrder.nativeOrder());
         cubeVertices = bbVertices.asFloatBuffer();
@@ -146,6 +172,11 @@ public class TreasureHuntCube implements VisibleGvrObject {
     public void updateModelPosition() {
         Matrix.setIdentityM(modelCube, 0);
         Matrix.translateM(modelCube, 0, modelPosition[0], modelPosition[1], modelPosition[2]);
+
+        // Update the sound location to match it with the new cube position.
+        if (soundId != GvrAudioEngine.INVALID_ID) {
+            setSoundPosition(soundId, gvrAudioEngine);
+        }
     }
 
     public void rotate() {
@@ -204,4 +235,21 @@ public class TreasureHuntCube implements VisibleGvrObject {
         updateModelPosition();
     }
 
+    @Override
+    public void pauseAudio() {
+        gvrAudioEngine.pause();
+    }
+
+    @Override
+    public void startAudio() {
+        gvrAudioEngine.resume();
+    }
+
+    @Override
+    public void updateAudioPosition(float[] headRotation) {
+        gvrAudioEngine.setHeadRotation(
+                headRotation[0], headRotation[1], headRotation[2], headRotation[3]);
+        // Regular update call to GVR audio engine.
+        gvrAudioEngine.update();
+    }
 }
