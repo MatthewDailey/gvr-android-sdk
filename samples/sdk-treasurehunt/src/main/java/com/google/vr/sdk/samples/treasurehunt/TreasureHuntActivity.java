@@ -59,8 +59,8 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
 
     private final float[] lightPosInEyeSpace = new float[4];
 
-    private GvrFloor floor;
-    private GvrCube cube;
+    private TreasureHuntFloor floor;
+    private TreasureHuntCube cube;
 
     private float[] camera;
     private float[] view;
@@ -91,8 +91,8 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         headView = new float[16];
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
-        floor = new GvrFloor(this);
-        cube = new GvrCube(this);
+        floor = new TreasureHuntFloor(this);
+        cube = new TreasureHuntCube(this);
 
         // Initialize 3D audio engine.
         gvrAudioEngine = new GvrAudioEngine(this, GvrAudioEngine.RenderingMode.BINAURAL_HIGH_QUALITY);
