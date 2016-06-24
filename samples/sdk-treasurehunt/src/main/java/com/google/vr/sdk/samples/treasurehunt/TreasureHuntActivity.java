@@ -46,8 +46,9 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
 
     private TreasureHuntFloor floor;
     private TreasureHuntCube cube;
-    private GvrHeadData headData;
-    private GvrEyeData eyeData;
+
+    private GvrHeadData reusedHeadData;
+    private GvrEyeData reusedEyeData;
 
     private Vibrator vibrator;
 
@@ -63,8 +64,8 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
 
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
-        headData = new GvrHeadData();
-        eyeData = new GvrEyeData();
+        reusedHeadData = new GvrHeadData();
+        reusedEyeData = new GvrEyeData();
 
         floor = new TreasureHuntFloor(this);
         cube = new TreasureHuntCube(this);
@@ -97,7 +98,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     @Override
     public void onResume() {
         super.onResume();
-        cube.startAudio();
+        cube.resumeAudio();
     }
 
     @Override
@@ -123,6 +124,8 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         Log.i(TAG, "onSurfaceCreated");
         GLES20.glClearColor(0.1f, 0.1f, 0.1f, 0.5f); // Dark background so text shows up well.
 
+        cube.initializeAndPlayAudio();
+
         cube.onSurfaceCreated();
         floor.onSurfaceCreated();
 
@@ -138,9 +141,9 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     public void onNewFrame(HeadTransform headTransform) {
         cube.rotate();
 
-        headData.updateFromHeadTransform(headTransform);
+        reusedHeadData.updateFromHeadTransform(headTransform);
 
-        cube.updateAudioPosition(headData);
+        cube.updateAudioPosition(reusedHeadData);
 
         GLErrorUtils.checkGLError("onReadyToDraw");
     }
@@ -157,10 +160,10 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
 
         GLErrorUtils.checkGLError("colorParam");
 
-        eyeData.updateFromEye(eye, headData);
+        reusedEyeData.updateFromEye(eye, reusedHeadData);
 
-        cube.draw(eyeData);
-        floor.draw(eyeData);
+        cube.draw(reusedEyeData);
+        floor.draw(reusedEyeData);
     }
 
     @Override
@@ -174,7 +177,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     public void onCardboardTrigger() {
         Log.i(TAG, "onCardboardTrigger");
 
-        if (cube.isLookingAtFrom(headData.headView)) {
+        if (cube.isLookingAtFrom(reusedHeadData.headView)) {
             cube.hide();
         }
 

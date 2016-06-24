@@ -100,23 +100,6 @@ public class TreasureHuntCube implements VisibleGvrObject, AudibleGvrObject {
     }
 
     public void onSurfaceCreated() {
-
-        // Avoid any delays during start-up due to decoding of sound files.
-        new Thread(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        // Start spatial audio playback of SOUND_FILE at the model postion. The returned
-                        //soundId handle is stored and allows for repositioning the sound object whenever
-                        // the cube position changes.
-                        gvrAudioEngine.preloadSoundFile(SOUND_FILE);
-                        soundId = gvrAudioEngine.createSoundObject(SOUND_FILE);
-                        setSoundPosition(soundId, gvrAudioEngine);
-                        gvrAudioEngine.playSound(soundId, true /* looped playback */);
-                    }
-                })
-                .start();
-
         // Visuable set up.
         ByteBuffer bbVertices = ByteBuffer.allocateDirect(WorldLayoutData.CUBE_COORDS.length * 4);
         bbVertices.order(ByteOrder.nativeOrder());
@@ -238,12 +221,31 @@ public class TreasureHuntCube implements VisibleGvrObject, AudibleGvrObject {
     }
 
     @Override
+    public void initializeAndPlayAudio() {
+        // Avoid any delays during start-up due to decoding of sound files.
+        new Thread(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        // Start spatial audio playback of SOUND_FILE at the model postion. The returned
+                        //soundId handle is stored and allows for repositioning the sound object whenever
+                        // the cube position changes.
+                        gvrAudioEngine.preloadSoundFile(SOUND_FILE);
+                        soundId = gvrAudioEngine.createSoundObject(SOUND_FILE);
+                        setSoundPosition(soundId, gvrAudioEngine);
+                        gvrAudioEngine.playSound(soundId, true /* looped playback */);
+                    }
+                })
+                .start();
+    }
+
+    @Override
     public void pauseAudio() {
         gvrAudioEngine.pause();
     }
 
     @Override
-    public void startAudio() {
+    public void resumeAudio() {
         gvrAudioEngine.resume();
     }
 
