@@ -46,16 +46,14 @@ public class TreasureHuntFloor implements VisibleGvrObject {
      * position of the light, so if we rewrite our code to draw the floor first, the lighting might
      * look strange.
      */
-    public void draw(float[] lightPosInEyeSpace,
-                     float[] view,
-                     float[] perspective) {
-        Matrix.multiplyMM(modelView, 0, view, 0, modelFloor, 0);
-        Matrix.multiplyMM(modelViewProjection, 0, perspective, 0, modelView, 0);
+    public void draw(GvrEyeData eyeData) {
+        Matrix.multiplyMM(modelView, 0, eyeData.view, 0, modelFloor, 0);
+        Matrix.multiplyMM(modelViewProjection, 0, eyeData.perspective, 0, modelView, 0);
 
         GLES20.glUseProgram(floorProgram);
 
         // Set ModelView, MVP, position, normals, and color.
-        GLES20.glUniform3fv(floorLightPosParam, 1, lightPosInEyeSpace, 0);
+        GLES20.glUniform3fv(floorLightPosParam, 1, eyeData.lightPosInEyeSpace, 0);
         GLES20.glUniformMatrix4fv(floorModelParam, 1, false, modelFloor, 0);
         GLES20.glUniformMatrix4fv(floorModelViewParam, 1, false, modelView, 0);
         GLES20.glUniformMatrix4fv(floorModelViewProjectionParam, 1, false, modelViewProjection, 0);

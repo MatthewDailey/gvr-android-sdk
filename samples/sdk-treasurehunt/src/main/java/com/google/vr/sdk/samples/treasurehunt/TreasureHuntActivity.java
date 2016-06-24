@@ -18,7 +18,6 @@ package com.google.vr.sdk.samples.treasurehunt;
 
 import android.content.Context;
 import android.opengl.GLES20;
-import android.opengl.Matrix;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.util.Log;
@@ -43,20 +42,12 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
 
     private static final String TAG = "TreasureHuntActivity";
 
-    private static final float Z_NEAR = 0.1f;
-    private static final float Z_FAR = 100.0f;
-
     public static final int COORDS_PER_VERTEX = 3;
-
-    // We keep the light always position just above the user.
-    private static final float[] LIGHT_POS_IN_WORLD_SPACE = new float[]{0.0f, 2.0f, 0.0f, 1.0f};
 
     private TreasureHuntFloor floor;
     private TreasureHuntCube cube;
     private GvrCameraData cameraData;
-
-    public final float[] lightPosInEyeSpace = new float[4];
-    public final float[] view = new float[16];
+    private GvrEyeData eyeData;
 
     private Vibrator vibrator;
 
@@ -73,6 +64,8 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
         cameraData = new GvrCameraData();
+        eyeData = new GvrEyeData();
+
         floor = new TreasureHuntFloor(this);
         cube = new TreasureHuntCube(this);
     }
@@ -164,18 +157,10 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
 
         GLErrorUtils.checkGLError("colorParam");
 
-        // Apply the eye transformation to the camera.
-        Matrix.multiplyMM(view, 0, eye.getEyeView(), 0, cameraData.camera, 0);
+        eyeData.updateFromEye(eye, cameraData);
 
-        // Set the position of the light
-        Matrix.multiplyMV(lightPosInEyeSpace, 0, view, 0, LIGHT_POS_IN_WORLD_SPACE, 0);
-
-        // Build the ModelView and ModelViewProjection matrices
-        // for calculating cube position and light.
-        float[] perspective = eye.getPerspective(Z_NEAR, Z_FAR);
-
-        cube.draw(lightPosInEyeSpace, view, perspective);
-        floor.draw(lightPosInEyeSpace, view, perspective);
+        cube.draw(eyeData);
+        floor.draw(eyeData);
     }
 
     @Override
