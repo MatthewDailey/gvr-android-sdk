@@ -195,7 +195,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         reusedEyeData.updateFromEye(eye, reusedHeadData);
 
         for (VisibleGvrObject visibleGvrObject : visibleGvrObjects) {
-            visibleGvrObject.draw(reusedEyeData);
+            visibleGvrObject.draw(reusedEyeData, reusedHeadData);
         }
     }
 

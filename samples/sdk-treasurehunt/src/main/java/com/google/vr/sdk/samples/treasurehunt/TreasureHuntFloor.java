@@ -46,7 +46,7 @@ public class TreasureHuntFloor implements VisibleGvrObject {
      * position of the light, so if we rewrite our code to draw the floor first, the lighting might
      * look strange.
      */
-    public void draw(GvrEyeData eyeData) {
+    public void draw(GvrEyeData eyeData, GvrHeadData headData) {
         Matrix.multiplyMM(modelView, 0, eyeData.view, 0, modelFloor, 0);
         Matrix.multiplyMM(modelViewProjection, 0, eyeData.perspective, 0, modelView, 0);
 

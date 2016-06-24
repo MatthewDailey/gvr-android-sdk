@@ -64,7 +64,7 @@ public class TreasureHuntCube implements VisibleGvrObject, AudibleGvrObject {
         gvrAudioEngine = new GvrAudioEngine(context, GvrAudioEngine.RenderingMode.BINAURAL_HIGH_QUALITY);
     }
 
-    public void draw(GvrEyeData eyeData) {
+    public void draw(GvrEyeData eyeData, GvrHeadData headData) {
         Matrix.multiplyMM(modelView, 0, eyeData.view, 0, modelCube, 0);
         Matrix.multiplyMM(modelViewProjection, 0, eyeData.perspective, 0, modelView, 0);
 
@@ -88,7 +88,7 @@ public class TreasureHuntCube implements VisibleGvrObject, AudibleGvrObject {
         // Set the normal positions of the cube, again for shading
         GLES20.glVertexAttribPointer(cubeNormalParam, 3, GLES20.GL_FLOAT, false, 0, cubeNormals);
         GLES20.glVertexAttribPointer(cubeColorParam, 4, GLES20.GL_FLOAT, false, 0,
-                this.isLookingAtFrom(eyeData.view) ? cubeFoundColors : cubeColors);
+                this.isLookingAtFrom(headData.headView) ? cubeFoundColors : cubeColors);
 
         // Enable vertex arrays
         GLES20.glEnableVertexAttribArray(cubePositionParam);
