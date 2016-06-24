@@ -35,7 +35,7 @@ public class GvrCube {
     private static final float YAW_LIMIT = 0.12f;
     private static final float PITCH_LIMIT = 0.12f;
 
-    protected float[] modelCube;
+    protected float[] modelCube = new float[16];
 
     protected float[] modelPosition = new float[]{0.0f, 0.0f, -MAX_MODEL_DISTANCE / 2.0f};
 
