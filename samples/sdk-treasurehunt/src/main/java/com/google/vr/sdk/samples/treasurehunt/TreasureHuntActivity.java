@@ -164,8 +164,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
                         // the cube position changes.
                         gvrAudioEngine.preloadSoundFile(SOUND_FILE);
                         soundId = gvrAudioEngine.createSoundObject(SOUND_FILE);
-                        gvrAudioEngine.setSoundObjectPosition(
-                                soundId, cube.modelPosition[0], cube.modelPosition[1], cube.modelPosition[2]);
+                        cube.setSoundPosition(soundId, gvrAudioEngine);
                         gvrAudioEngine.playSound(soundId, true /* looped playback */);
                     }
                 })
@@ -184,8 +183,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
 
         // Update the sound location to match it with the new cube position.
         if (soundId != GvrAudioEngine.INVALID_ID) {
-            gvrAudioEngine.setSoundObjectPosition(
-                    soundId, cube.modelPosition[0], cube.modelPosition[1], cube.modelPosition[2]);
+            cube.setSoundPosition(soundId, gvrAudioEngine);
         }
         GLErrorUtils.checkGLError("updateCubePosition");
     }
@@ -237,8 +235,6 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         float[] perspective = eye.getPerspective(Z_NEAR, Z_FAR);
 
         cube.draw(lightPosInEyeSpace, view, perspective);
-
-        // Set modelView for the floor, so we draw floor in the correct location
         floor.draw(lightPosInEyeSpace, view, perspective);
     }
 

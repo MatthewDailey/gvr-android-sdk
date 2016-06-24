@@ -4,11 +4,19 @@ import android.content.Context;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
 
+import com.google.vr.sdk.audio.GvrAudioEngine;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
 public class GvrCube {
+
+    private static final float MIN_MODEL_DISTANCE = 3.0f;
+    private static final float MAX_MODEL_DISTANCE = 7.0f;
+
+    private static final float YAW_LIMIT = 0.12f;
+    private static final float PITCH_LIMIT = 0.12f;
 
     private static final float TIME_DELTA = 0.3f;
 
@@ -29,15 +37,9 @@ public class GvrCube {
 
     private float objectDistance = MAX_MODEL_DISTANCE / 2.0f;
 
-    private static final float MIN_MODEL_DISTANCE = 3.0f;
-    private static final float MAX_MODEL_DISTANCE = 7.0f;
+    private float[] modelCube = new float[16];
 
-    private static final float YAW_LIMIT = 0.12f;
-    private static final float PITCH_LIMIT = 0.12f;
-
-    protected float[] modelCube = new float[16];
-
-    protected float[] modelPosition = new float[]{0.0f, 0.0f, -MAX_MODEL_DISTANCE / 2.0f};
+    private float[] modelPosition = new float[]{0.0f, 0.0f, -MAX_MODEL_DISTANCE / 2.0f};
 
     // Convenience vector for extracting the position from a matrix via multiplication.
     private static final float[] POS_MATRIX_MULTIPLY_VEC = {0, 0, 0, 1.0f};
@@ -148,6 +150,11 @@ public class GvrCube {
 
     public void rotate() {
         Matrix.rotateM(modelCube, 0, TIME_DELTA, 0.5f, 0.5f, 1.0f);
+    }
+
+    public void setSoundPosition(int soundId, GvrAudioEngine audioEngine) {
+        audioEngine.setSoundObjectPosition(
+                soundId, modelPosition[0], modelPosition[1], modelPosition[2]);
     }
 
     /**
