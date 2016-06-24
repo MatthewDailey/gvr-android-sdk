@@ -4,8 +4,6 @@ import android.opengl.Matrix;
 
 import com.google.vr.sdk.base.Eye;
 
-import java.util.Arrays;
-
 public class GvrEyeData {
     // We keep the light always position just above the user.
     private static final float[] LIGHT_POS_IN_WORLD_SPACE = new float[]{0.0f, 2.0f, 0.0f, 1.0f};
@@ -17,7 +15,7 @@ public class GvrEyeData {
     public final float[] view = new float[16];
     public float[] perspective = new float[16];
 
-    public void updateFromEye(Eye eye, GvrCameraData cameraData) {
+    public void updateFromEye(Eye eye, GvrHeadData cameraData) {
         // Apply the eye transformation to the camera.
         Matrix.multiplyMM(view, 0, eye.getEyeView(), 0, cameraData.camera, 0);
 

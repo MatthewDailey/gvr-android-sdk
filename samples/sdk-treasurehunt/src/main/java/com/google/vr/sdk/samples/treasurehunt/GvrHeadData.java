@@ -4,13 +4,13 @@ import android.opengl.Matrix;
 
 import com.google.vr.sdk.base.HeadTransform;
 
-public class GvrCameraData {
+public class GvrHeadData {
 
     private static final float CAMERA_Z = 0.01f;
 
     public final float[] camera = new float[16];
     public final float[] headView = new float[16];
-    public final float[] headRotation = new float[4];
+    public final float[] rotation = new float[4];
 
     public void updateFromHeadTransform(HeadTransform headTransform) {
 
@@ -20,6 +20,6 @@ public class GvrCameraData {
         headTransform.getHeadView(headView, 0);
 
         // Update the 3d audio engine with the most recent head rotation.
-        headTransform.getQuaternion(headRotation, 0);
+        headTransform.getQuaternion(rotation, 0);
     }
 }

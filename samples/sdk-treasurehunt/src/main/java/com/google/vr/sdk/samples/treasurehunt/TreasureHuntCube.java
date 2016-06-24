@@ -248,9 +248,9 @@ public class TreasureHuntCube implements VisibleGvrObject, AudibleGvrObject {
     }
 
     @Override
-    public void updateAudioPosition(float[] headRotation) {
+    public void updateAudioPosition(GvrHeadData headData) {
         gvrAudioEngine.setHeadRotation(
-                headRotation[0], headRotation[1], headRotation[2], headRotation[3]);
+                headData.rotation[0], headData.rotation[1], headData.rotation[2], headData.rotation[3]);
         // Regular update call to GVR audio engine.
         gvrAudioEngine.update();
     }
