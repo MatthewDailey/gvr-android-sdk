@@ -41,29 +41,22 @@ import javax.microedition.khronos.egl.EGLConfig;
  */
 public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoRenderer {
 
-
     private static final String TAG = "TreasureHuntActivity";
 
     private static final float Z_NEAR = 0.1f;
     private static final float Z_FAR = 100.0f;
-
-    private static final float CAMERA_Z = 0.01f;
 
     public static final int COORDS_PER_VERTEX = 3;
 
     // We keep the light always position just above the user.
     private static final float[] LIGHT_POS_IN_WORLD_SPACE = new float[]{0.0f, 2.0f, 0.0f, 1.0f};
 
-    private final float[] lightPosInEyeSpace = new float[4];
-
     private TreasureHuntFloor floor;
     private TreasureHuntCube cube;
+    private GvrCameraData cameraData;
 
-    private float[] camera;
-    private float[] view;
-    private float[] headView;
-
-    private float[] headRotation;
+    public final float[] lightPosInEyeSpace = new float[4];
+    public final float[] view = new float[16];
 
     private Vibrator vibrator;
 
@@ -77,14 +70,9 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
 
         initializeGvrView();
 
-        camera = new float[16];
-        view = new float[16];
-
-        // Model first appears directly in front of user.
-        headRotation = new float[4];
-        headView = new float[16];
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
+        cameraData = new GvrCameraData();
         floor = new TreasureHuntFloor(this);
         cube = new TreasureHuntCube(this);
     }
@@ -145,18 +133,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         cube.onSurfaceCreated();
         floor.onSurfaceCreated();
 
-        updateModelPosition();
-
         GLErrorUtils.checkGLError("onSurfaceCreated");
-    }
-
-    /**
-     * Updates the cube model position.
-     */
-    protected void updateModelPosition() {
-        cube.updateModelPosition();
-
-        GLErrorUtils.checkGLError("updateCubePosition");
     }
 
     /**
@@ -168,15 +145,9 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     public void onNewFrame(HeadTransform headTransform) {
         cube.rotate();
 
-        // Build the camera matrix and apply it to the ModelView.
-        Matrix.setLookAtM(camera, 0, 0.0f, 0.0f, CAMERA_Z, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
+        cameraData.updateFromHeadTransform(headTransform);
 
-        headTransform.getHeadView(headView, 0);
-
-        // Update the 3d audio engine with the most recent head rotation.
-        headTransform.getQuaternion(headRotation, 0);
-
-        cube.updateAudioPosition(headRotation);
+        cube.updateAudioPosition(cameraData.headRotation);
 
         GLErrorUtils.checkGLError("onReadyToDraw");
     }
@@ -194,7 +165,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         GLErrorUtils.checkGLError("colorParam");
 
         // Apply the eye transformation to the camera.
-        Matrix.multiplyMM(view, 0, eye.getEyeView(), 0, camera, 0);
+        Matrix.multiplyMM(view, 0, eye.getEyeView(), 0, cameraData.camera, 0);
 
         // Set the position of the light
         Matrix.multiplyMV(lightPosInEyeSpace, 0, view, 0, LIGHT_POS_IN_WORLD_SPACE, 0);
@@ -218,7 +189,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     public void onCardboardTrigger() {
         Log.i(TAG, "onCardboardTrigger");
 
-        if (cube.isLookingAtFrom(headView)) {
+        if (cube.isLookingAtFrom(cameraData.headView)) {
             cube.hide();
         }
 

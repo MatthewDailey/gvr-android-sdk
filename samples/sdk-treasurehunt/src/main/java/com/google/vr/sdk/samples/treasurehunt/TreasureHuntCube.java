@@ -167,9 +167,11 @@ public class TreasureHuntCube implements VisibleGvrObject, AudibleGvrObject {
         cubeLightPosParam = GLES20.glGetUniformLocation(cubeProgram, "u_LightPos");
 
         GLErrorUtils.checkGLError("Cube program params");
+
+        updateModelPosition();
     }
 
-    public void updateModelPosition() {
+    private void updateModelPosition() {
         Matrix.setIdentityM(modelCube, 0);
         Matrix.translateM(modelCube, 0, modelPosition[0], modelPosition[1], modelPosition[2]);
 
@@ -177,6 +179,8 @@ public class TreasureHuntCube implements VisibleGvrObject, AudibleGvrObject {
         if (soundId != GvrAudioEngine.INVALID_ID) {
             setSoundPosition(soundId, gvrAudioEngine);
         }
+
+        GLErrorUtils.checkGLError("updateCubePosition");
     }
 
     public void rotate() {
