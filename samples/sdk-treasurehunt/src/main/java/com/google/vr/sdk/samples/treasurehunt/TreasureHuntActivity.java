@@ -48,8 +48,8 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     public static final int COORDS_PER_VERTEX = 3;
 
     private List<AudibleGvrObject> audibleGvrObjects = new ArrayList<>();
+    private List<VisibleGvrObject> visibleGvrObjects = new ArrayList<>();
 
-    private TreasureHuntFloor floor;
     private TreasureHuntCube cube;
 
     private GvrHeadData reusedHeadData;
@@ -66,6 +66,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         super.onCreate(savedInstanceState);
 
         audibleGvrObjects.clear();
+        visibleGvrObjects.clear();
 
         initializeGvrView();
 
@@ -74,10 +75,12 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         reusedHeadData = new GvrHeadData();
         reusedEyeData = new GvrEyeData();
 
-        floor = new TreasureHuntFloor(this);
         cube = new TreasureHuntCube(this);
 
         audibleGvrObjects.add(cube);
+
+        visibleGvrObjects.add(new TreasureHuntFloor(this));
+        visibleGvrObjects.add(cube);
     }
 
     public void initializeGvrView() {
@@ -141,8 +144,9 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
             audibleGvrObject.initializeAndPlayAudio();
         }
 
-        cube.onSurfaceCreated();
-        floor.onSurfaceCreated();
+        for (VisibleGvrObject visibleGvrObject : visibleGvrObjects) {
+            visibleGvrObject.onSurfaceCreated();
+        }
 
         GLErrorUtils.checkGLError("onSurfaceCreated");
     }
@@ -179,8 +183,9 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
 
         reusedEyeData.updateFromEye(eye, reusedHeadData);
 
-        cube.draw(reusedEyeData);
-        floor.draw(reusedEyeData);
+        for (VisibleGvrObject visibleGvrObject : visibleGvrObjects) {
+            visibleGvrObject.draw(reusedEyeData);
+        }
     }
 
     @Override
