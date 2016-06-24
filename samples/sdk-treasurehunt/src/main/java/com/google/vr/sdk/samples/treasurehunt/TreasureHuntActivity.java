@@ -30,10 +30,6 @@ import com.google.vr.sdk.base.GvrView;
 import com.google.vr.sdk.base.HeadTransform;
 import com.google.vr.sdk.base.Viewport;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
-
 import javax.microedition.khronos.egl.EGLConfig;
 
 /**
@@ -46,8 +42,6 @@ import javax.microedition.khronos.egl.EGLConfig;
  */
 public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoRenderer {
 
-    protected float[] modelCube;
-    protected float[] modelPosition;
 
     private static final String TAG = "TreasureHuntActivity";
 
@@ -55,53 +49,24 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     private static final float Z_FAR = 100.0f;
 
     private static final float CAMERA_Z = 0.01f;
-    private static final float TIME_DELTA = 0.3f;
-
-    private static final float YAW_LIMIT = 0.12f;
-    private static final float PITCH_LIMIT = 0.12f;
 
     public static final int COORDS_PER_VERTEX = 3;
 
     // We keep the light always position just above the user.
     private static final float[] LIGHT_POS_IN_WORLD_SPACE = new float[]{0.0f, 2.0f, 0.0f, 1.0f};
 
-    // Convenience vector for extracting the position from a matrix via multiplication.
-    private static final float[] POS_MATRIX_MULTIPLY_VEC = {0, 0, 0, 1.0f};
-
-    private static final float MIN_MODEL_DISTANCE = 3.0f;
-    private static final float MAX_MODEL_DISTANCE = 7.0f;
-
     private static final String SOUND_FILE = "cube_sound.wav";
 
     private final float[] lightPosInEyeSpace = new float[4];
 
     private GvrFloor floor;
-
-    private FloatBuffer cubeVertices;
-    private FloatBuffer cubeColors;
-    private FloatBuffer cubeFoundColors;
-    private FloatBuffer cubeNormals;
-
-    private int cubeProgram;
-
-    private int cubePositionParam;
-    private int cubeNormalParam;
-    private int cubeColorParam;
-    private int cubeModelParam;
-    private int cubeModelViewParam;
-    private int cubeModelViewProjectionParam;
-    private int cubeLightPosParam;
+    private GvrCube cube;
 
     private float[] camera;
     private float[] view;
     private float[] headView;
-    private float[] modelViewProjection;
-    private float[] modelView;
 
-    private float[] tempPosition;
     private float[] headRotation;
-
-    private float objectDistance = MAX_MODEL_DISTANCE / 2.0f;
 
     private Vibrator vibrator;
 
@@ -118,20 +83,16 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
 
         initializeGvrView();
 
-        modelCube = new float[16];
         camera = new float[16];
         view = new float[16];
-        modelView = new float[16];
-        modelViewProjection = new float[16];
 
-        tempPosition = new float[4];
         // Model first appears directly in front of user.
-        modelPosition = new float[]{0.0f, 0.0f, -MAX_MODEL_DISTANCE / 2.0f};
         headRotation = new float[4];
         headView = new float[16];
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
         floor = new GvrFloor(this);
+        cube = new GvrCube(this);
 
         // Initialize 3D audio engine.
         gvrAudioEngine = new GvrAudioEngine(this, GvrAudioEngine.RenderingMode.BINAURAL_HIGH_QUALITY);
@@ -190,54 +151,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         Log.i(TAG, "onSurfaceCreated");
         GLES20.glClearColor(0.1f, 0.1f, 0.1f, 0.5f); // Dark background so text shows up well.
 
-        ByteBuffer bbVertices = ByteBuffer.allocateDirect(WorldLayoutData.CUBE_COORDS.length * 4);
-        bbVertices.order(ByteOrder.nativeOrder());
-        cubeVertices = bbVertices.asFloatBuffer();
-        cubeVertices.put(WorldLayoutData.CUBE_COORDS);
-        cubeVertices.position(0);
-
-        ByteBuffer bbColors = ByteBuffer.allocateDirect(WorldLayoutData.CUBE_COLORS.length * 4);
-        bbColors.order(ByteOrder.nativeOrder());
-        cubeColors = bbColors.asFloatBuffer();
-        cubeColors.put(WorldLayoutData.CUBE_COLORS);
-        cubeColors.position(0);
-
-        ByteBuffer bbFoundColors =
-                ByteBuffer.allocateDirect(WorldLayoutData.CUBE_FOUND_COLORS.length * 4);
-        bbFoundColors.order(ByteOrder.nativeOrder());
-        cubeFoundColors = bbFoundColors.asFloatBuffer();
-        cubeFoundColors.put(WorldLayoutData.CUBE_FOUND_COLORS);
-        cubeFoundColors.position(0);
-
-        ByteBuffer bbNormals = ByteBuffer.allocateDirect(WorldLayoutData.CUBE_NORMALS.length * 4);
-        bbNormals.order(ByteOrder.nativeOrder());
-        cubeNormals = bbNormals.asFloatBuffer();
-        cubeNormals.put(WorldLayoutData.CUBE_NORMALS);
-        cubeNormals.position(0);
-
-        GLShaderLoader glShaderLoader = new GLShaderLoader(this);
-        int vertexShader = glShaderLoader.loadGLShader(GLES20.GL_VERTEX_SHADER, R.raw.light_vertex);
-        int passthroughShader = glShaderLoader.loadGLShader(GLES20.GL_FRAGMENT_SHADER, R.raw.passthrough_fragment);
-
-        cubeProgram = GLES20.glCreateProgram();
-        GLES20.glAttachShader(cubeProgram, vertexShader);
-        GLES20.glAttachShader(cubeProgram, passthroughShader);
-        GLES20.glLinkProgram(cubeProgram);
-        GLES20.glUseProgram(cubeProgram);
-
-        GLErrorUtils.checkGLError("Cube program");
-
-        cubePositionParam = GLES20.glGetAttribLocation(cubeProgram, "a_Position");
-        cubeNormalParam = GLES20.glGetAttribLocation(cubeProgram, "a_Normal");
-        cubeColorParam = GLES20.glGetAttribLocation(cubeProgram, "a_Color");
-
-        cubeModelParam = GLES20.glGetUniformLocation(cubeProgram, "u_Model");
-        cubeModelViewParam = GLES20.glGetUniformLocation(cubeProgram, "u_MVMatrix");
-        cubeModelViewProjectionParam = GLES20.glGetUniformLocation(cubeProgram, "u_MVP");
-        cubeLightPosParam = GLES20.glGetUniformLocation(cubeProgram, "u_LightPos");
-
-        GLErrorUtils.checkGLError("Cube program params");
-
+        cube.onSurfaceCreated();
         floor.onSurfaceCreated();
 
         // Avoid any delays during start-up due to decoding of sound files.
@@ -251,7 +165,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
                         gvrAudioEngine.preloadSoundFile(SOUND_FILE);
                         soundId = gvrAudioEngine.createSoundObject(SOUND_FILE);
                         gvrAudioEngine.setSoundObjectPosition(
-                                soundId, modelPosition[0], modelPosition[1], modelPosition[2]);
+                                soundId, cube.modelPosition[0], cube.modelPosition[1], cube.modelPosition[2]);
                         gvrAudioEngine.playSound(soundId, true /* looped playback */);
                     }
                 })
@@ -266,13 +180,12 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
      * Updates the cube model position.
      */
     protected void updateModelPosition() {
-        Matrix.setIdentityM(modelCube, 0);
-        Matrix.translateM(modelCube, 0, modelPosition[0], modelPosition[1], modelPosition[2]);
+        cube.updateModelPosition();
 
         // Update the sound location to match it with the new cube position.
         if (soundId != GvrAudioEngine.INVALID_ID) {
             gvrAudioEngine.setSoundObjectPosition(
-                    soundId, modelPosition[0], modelPosition[1], modelPosition[2]);
+                    soundId, cube.modelPosition[0], cube.modelPosition[1], cube.modelPosition[2]);
         }
         GLErrorUtils.checkGLError("updateCubePosition");
     }
@@ -284,7 +197,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
      */
     @Override
     public void onNewFrame(HeadTransform headTransform) {
-        setCubeRotation();
+        cube.rotate();
 
         // Build the camera matrix and apply it to the ModelView.
         Matrix.setLookAtM(camera, 0, 0.0f, 0.0f, CAMERA_Z, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
@@ -299,10 +212,6 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         gvrAudioEngine.update();
 
         GLErrorUtils.checkGLError("onReadyToDraw");
-    }
-
-    protected void setCubeRotation() {
-        Matrix.rotateM(modelCube, 0, TIME_DELTA, 0.5f, 0.5f, 1.0f);
     }
 
     /**
@@ -326,9 +235,8 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         // Build the ModelView and ModelViewProjection matrices
         // for calculating cube position and light.
         float[] perspective = eye.getPerspective(Z_NEAR, Z_FAR);
-        Matrix.multiplyMM(modelView, 0, view, 0, modelCube, 0);
-        Matrix.multiplyMM(modelViewProjection, 0, perspective, 0, modelView, 0);
-        drawCube();
+
+        cube.draw(lightPosInEyeSpace, view, perspective);
 
         // Set modelView for the floor, so we draw floor in the correct location
         floor.draw(lightPosInEyeSpace, view, perspective);
@@ -339,103 +247,18 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     }
 
     /**
-     * Draw the cube.
-     * <p/>
-     * <p>We've set all of our transformation matrices. Now we simply pass them into the shader.
-     */
-    public void drawCube() {
-        GLES20.glUseProgram(cubeProgram);
-
-        GLES20.glUniform3fv(cubeLightPosParam, 1, lightPosInEyeSpace, 0);
-
-        // Set the Model in the shader, used to calculate lighting
-        GLES20.glUniformMatrix4fv(cubeModelParam, 1, false, modelCube, 0);
-
-        // Set the ModelView in the shader, used to calculate lighting
-        GLES20.glUniformMatrix4fv(cubeModelViewParam, 1, false, modelView, 0);
-
-        // Set the position of the cube
-        GLES20.glVertexAttribPointer(
-                cubePositionParam, COORDS_PER_VERTEX, GLES20.GL_FLOAT, false, 0, cubeVertices);
-
-        // Set the ModelViewProjection matrix in the shader.
-        GLES20.glUniformMatrix4fv(cubeModelViewProjectionParam, 1, false, modelViewProjection, 0);
-
-        // Set the normal positions of the cube, again for shading
-        GLES20.glVertexAttribPointer(cubeNormalParam, 3, GLES20.GL_FLOAT, false, 0, cubeNormals);
-        GLES20.glVertexAttribPointer(cubeColorParam, 4, GLES20.GL_FLOAT, false, 0,
-                isLookingAtObject() ? cubeFoundColors : cubeColors);
-
-        // Enable vertex arrays
-        GLES20.glEnableVertexAttribArray(cubePositionParam);
-        GLES20.glEnableVertexAttribArray(cubeNormalParam);
-        GLES20.glEnableVertexAttribArray(cubeColorParam);
-
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 36);
-        GLErrorUtils.checkGLError("Drawing cube");
-    }
-
-
-
-    /**
      * Called when the Cardboard trigger is pulled.
      */
     @Override
     public void onCardboardTrigger() {
         Log.i(TAG, "onCardboardTrigger");
 
-        if (isLookingAtObject()) {
-            hideObject();
+        if (cube.isLookingAtFrom(headView)) {
+            cube.hide();
         }
 
         // Always give user feedback.
         vibrator.vibrate(50);
     }
 
-    /**
-     * Find a new random position for the object.
-     * <p/>
-     * <p>We'll rotate it around the Y-axis so it's out of sight, and then up or down by a little bit.
-     */
-    protected void hideObject() {
-        float[] rotationMatrix = new float[16];
-        float[] posVec = new float[4];
-
-        // First rotate in XZ plane, between 90 and 270 deg away, and scale so that we vary
-        // the object's distance from the user.
-        float angleXZ = (float) Math.random() * 180 + 90;
-        Matrix.setRotateM(rotationMatrix, 0, angleXZ, 0f, 1f, 0f);
-        float oldObjectDistance = objectDistance;
-        objectDistance =
-                (float) Math.random() * (MAX_MODEL_DISTANCE - MIN_MODEL_DISTANCE) + MIN_MODEL_DISTANCE;
-        float objectScalingFactor = objectDistance / oldObjectDistance;
-        Matrix.scaleM(rotationMatrix, 0, objectScalingFactor, objectScalingFactor, objectScalingFactor);
-        Matrix.multiplyMV(posVec, 0, rotationMatrix, 0, modelCube, 12);
-
-        float angleY = (float) Math.random() * 80 - 40; // Angle in Y plane, between -40 and 40.
-        angleY = (float) Math.toRadians(angleY);
-        float newY = (float) Math.tan(angleY) * objectDistance;
-
-        modelPosition[0] = posVec[0];
-        modelPosition[1] = newY;
-        modelPosition[2] = posVec[2];
-
-        updateModelPosition();
-    }
-
-    /**
-     * Check if user is looking at object by calculating where the object is in eye-space.
-     *
-     * @return true if the user is looking at the object.
-     */
-    private boolean isLookingAtObject() {
-        // Convert object space to camera space. Use the headView from onNewFrame.
-        Matrix.multiplyMM(modelView, 0, headView, 0, modelCube, 0);
-        Matrix.multiplyMV(tempPosition, 0, modelView, 0, POS_MATRIX_MULTIPLY_VEC, 0);
-
-        float pitch = (float) Math.atan2(tempPosition[1], -tempPosition[2]);
-        float yaw = (float) Math.atan2(tempPosition[0], -tempPosition[2]);
-
-        return Math.abs(pitch) < PITCH_LIMIT && Math.abs(yaw) < YAW_LIMIT;
-    }
 }
