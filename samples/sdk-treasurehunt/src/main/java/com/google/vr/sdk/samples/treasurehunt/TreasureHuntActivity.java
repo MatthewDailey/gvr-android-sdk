@@ -51,8 +51,6 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     private List<VisibleGvrObject> visibleGvrObjects = new ArrayList<>();
     private List<CardboardTriggerListener> cardboardTriggerListeners = new ArrayList<>();
 
-    private TreasureHuntCube cube;
-
     private GvrHeadData reusedHeadData;
     private GvrEyeData reusedEyeData;
 
@@ -77,13 +75,10 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         reusedHeadData = new GvrHeadData();
         reusedEyeData = new GvrEyeData();
 
-        cube = new TreasureHuntCube(this);
+        final TreasureHuntCube cube = new TreasureHuntCube(this);
 
         audibleGvrObjects.add(cube);
-
-        visibleGvrObjects.add(new TreasureHuntFloor(this));
         visibleGvrObjects.add(cube);
-
         cardboardTriggerListeners.add(new CardboardTriggerListener() {
             @Override
             public void onCardboardTrigger() {
@@ -92,6 +87,8 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
                 }
             }
         });
+
+        visibleGvrObjects.add(new TreasureHuntFloor(this));
     }
 
     public void initializeGvrView() {
@@ -169,12 +166,14 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
      */
     @Override
     public void onNewFrame(HeadTransform headTransform) {
-        cube.rotate();
-
         reusedHeadData.updateFromHeadTransform(headTransform);
 
-        for(AudibleGvrObject audibleGvrObject : audibleGvrObjects) {
+        for (AudibleGvrObject audibleGvrObject : audibleGvrObjects) {
             audibleGvrObject.updateAudioPosition(reusedHeadData);
+        }
+
+        for (VisibleGvrObject visibleGvrObject : visibleGvrObjects) {
+            visibleGvrObject.onNewFrame();
         }
 
         GLErrorUtils.checkGLError("onReadyToDraw");

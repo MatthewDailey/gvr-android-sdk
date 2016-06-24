@@ -152,6 +152,11 @@ public class TreasureHuntCube implements VisibleGvrObject, AudibleGvrObject {
         updateModelPosition();
     }
 
+    @Override
+    public void onNewFrame() {
+        rotate();
+    }
+
     private void updateModelPosition() {
         Matrix.setIdentityM(modelCube, 0);
         Matrix.translateM(modelCube, 0, modelPosition[0], modelPosition[1], modelPosition[2]);
@@ -164,7 +169,7 @@ public class TreasureHuntCube implements VisibleGvrObject, AudibleGvrObject {
         GLErrorUtils.checkGLError("updateCubePosition");
     }
 
-    public void rotate() {
+    private void rotate() {
         Matrix.rotateM(modelCube, 0, TIME_DELTA, 0.5f, 0.5f, 1.0f);
     }
 

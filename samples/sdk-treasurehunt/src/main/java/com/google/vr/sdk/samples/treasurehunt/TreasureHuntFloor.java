@@ -117,4 +117,9 @@ public class TreasureHuntFloor implements VisibleGvrObject {
 
         GLErrorUtils.checkGLError("Floor program params");
     }
+
+    @Override
+    public void onNewFrame() {
+        // Floor is static, do nothing.
+    }
 }
