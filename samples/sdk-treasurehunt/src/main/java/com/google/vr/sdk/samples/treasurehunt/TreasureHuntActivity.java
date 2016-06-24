@@ -28,6 +28,9 @@ import com.google.vr.sdk.base.GvrView;
 import com.google.vr.sdk.base.HeadTransform;
 import com.google.vr.sdk.base.Viewport;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.microedition.khronos.egl.EGLConfig;
 
 /**
@@ -43,6 +46,8 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     private static final String TAG = "TreasureHuntActivity";
 
     public static final int COORDS_PER_VERTEX = 3;
+
+    private List<AudibleGvrObject> audibleGvrObjects = new ArrayList<>();
 
     private TreasureHuntFloor floor;
     private TreasureHuntCube cube;
@@ -60,6 +65,8 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        audibleGvrObjects.clear();
+
         initializeGvrView();
 
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
@@ -69,6 +76,8 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
 
         floor = new TreasureHuntFloor(this);
         cube = new TreasureHuntCube(this);
+
+        audibleGvrObjects.add(cube);
     }
 
     public void initializeGvrView() {
@@ -92,13 +101,17 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     @Override
     public void onPause() {
         super.onPause();
-        cube.pauseAudio();
+        for(AudibleGvrObject audibleGvrObject : audibleGvrObjects) {
+            audibleGvrObject.pauseAudio();
+        }
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        cube.resumeAudio();
+        for(AudibleGvrObject audibleGvrObject : audibleGvrObjects) {
+            audibleGvrObject.resumeAudio();
+        }
     }
 
     @Override
@@ -124,7 +137,9 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         Log.i(TAG, "onSurfaceCreated");
         GLES20.glClearColor(0.1f, 0.1f, 0.1f, 0.5f); // Dark background so text shows up well.
 
-        cube.initializeAndPlayAudio();
+        for(AudibleGvrObject audibleGvrObject : audibleGvrObjects) {
+            audibleGvrObject.initializeAndPlayAudio();
+        }
 
         cube.onSurfaceCreated();
         floor.onSurfaceCreated();
@@ -143,7 +158,9 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
 
         reusedHeadData.updateFromHeadTransform(headTransform);
 
-        cube.updateAudioPosition(reusedHeadData);
+        for(AudibleGvrObject audibleGvrObject : audibleGvrObjects) {
+            audibleGvrObject.updateAudioPosition(reusedHeadData);
+        }
 
         GLErrorUtils.checkGLError("onReadyToDraw");
     }
