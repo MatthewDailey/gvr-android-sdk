@@ -235,9 +235,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
      */
     @Override
     public void onCardboardTrigger() {
-        Log.v(TAG, "onCardboardTrigger");
-
-        
+        Log.i(TAG, "onCardboardTrigger number of objects : " + visibleGvrObjects.size());
 
         for (CardboardTriggerListener cardboardTriggerListener : cardboardTriggerListeners) {
             cardboardTriggerListener.onCardboardTrigger();
