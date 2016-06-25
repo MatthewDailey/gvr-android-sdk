@@ -94,7 +94,6 @@ public class TreasureHuntFloor implements VisibleGvrObject {
 
 
 
-
         floorProgram = GLES20.glCreateProgram();
         GLES20.glAttachShader(floorProgram, vertexShader);
         GLES20.glAttachShader(floorProgram, gridShader);

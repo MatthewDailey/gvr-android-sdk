@@ -29,7 +29,9 @@ import com.google.vr.sdk.base.HeadTransform;
 import com.google.vr.sdk.base.Viewport;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 import javax.microedition.khronos.egl.EGLConfig;
 
@@ -50,6 +52,8 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     private List<AudibleGvrObject> audibleGvrObjects = new ArrayList<>();
     private List<VisibleGvrObject> visibleGvrObjects = new ArrayList<>();
     private List<CardboardTriggerListener> cardboardTriggerListeners = new ArrayList<>();
+
+    private Queue<Runnable> runOnNextFrame = new LinkedList<>();
 
     private GvrHeadData reusedHeadData;
     private GvrEyeData reusedEyeData;
@@ -75,6 +79,12 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         reusedHeadData = new GvrHeadData();
         reusedEyeData = new GvrEyeData();
 
+        createCube();
+
+        visibleGvrObjects.add(new TreasureHuntFloor(this));
+    }
+
+    private TreasureHuntCube createCube() {
         final TreasureHuntCube cube = new TreasureHuntCube(this);
 
         audibleGvrObjects.add(cube);
@@ -83,12 +93,22 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
             @Override
             public void onCardboardTrigger() {
                 if (cube.isLookingAtFrom(reusedHeadData.headView)) {
+                    Log.i(TAG, "lookingAtFrom " + Thread.currentThread().getName());
                     cube.hide();
+
+                    runOnNextFrame.add(new Runnable() {
+                        @Override
+                        public void run() {
+                            TreasureHuntCube newCube = createCube();
+                            newCube.hide();
+                            newCube.onSurfaceCreated();
+                        }
+                    });
                 }
             }
         });
 
-        visibleGvrObjects.add(new TreasureHuntFloor(this));
+        return cube;
     }
 
     public void initializeGvrView() {
@@ -145,7 +165,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
      */
     @Override
     public void onSurfaceCreated(EGLConfig config) {
-        Log.i(TAG, "onSurfaceCreated");
+        Log.i(TAG, "onSurfaceCreated " + Thread.currentThread().getName());
         GLES20.glClearColor(0.1f, 0.1f, 0.1f, 0.5f); // Dark background so text shows up well.
 
         for(AudibleGvrObject audibleGvrObject : audibleGvrObjects) {
@@ -166,7 +186,12 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
      */
     @Override
     public void onNewFrame(HeadTransform headTransform) {
+        Log.i(TAG, "onNewFrame " + Thread.currentThread().getName());
         reusedHeadData.updateFromHeadTransform(headTransform);
+
+        while (!runOnNextFrame.isEmpty()) {
+            runOnNextFrame.poll().run();
+        }
 
         for (AudibleGvrObject audibleGvrObject : audibleGvrObjects) {
             audibleGvrObject.updateAudioPosition(reusedHeadData);
@@ -186,6 +211,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
      */
     @Override
     public void onDrawEye(Eye eye) {
+        Log.i(TAG, "onDrawEye " + Thread.currentThread().getName());
         GLES20.glEnable(GLES20.GL_DEPTH_TEST);
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
 
@@ -195,6 +221,8 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
 
         for (VisibleGvrObject visibleGvrObject : visibleGvrObjects) {
             visibleGvrObject.draw(reusedEyeData, reusedHeadData);
+
+            GLErrorUtils.checkGLError("drawing-" + visibleGvrObject.getClass().getName());
         }
     }
 
